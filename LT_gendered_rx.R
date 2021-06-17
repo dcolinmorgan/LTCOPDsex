@@ -63,7 +63,7 @@ fit <- lmFit(ffdata, designA)  # fit linear model
 fit2A <- eBayes(fit, 0.01)
 
 tT2<-topTable(fit2A, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
-tT2 <- subset(tT2, select=c("ID",'AveExpr','logFC',"P.Value",'adj.P.Val')) ##
+# tT2 <- subset(tT2, select=c("ID",'AveExpr','logFC',"P.Value",'adj.P.Val')) ##
 write.table(tT2, file=paste('analyses/F_LTCOPD_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
 
@@ -73,7 +73,7 @@ fit <- lmFit(mmdata, designB)  # fit linear model
 fitA <- eBayes(fit, 0.01)
 
 tT<-topTable(fitA, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
-tT <- subset(tT, select=c("ID",'AveExpr','logFC',"P.Value",'adj.P.Val')) ##
+# tT <- subset(tT, select=c("ID",'AveExpr','logFC',"P.Value",'adj.P.Val')) ##
 write.table(tT, file=paste('analyses/M_LTCOPD_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
 
@@ -135,23 +135,38 @@ write.table(round(data1,3),'LTRC_qsmooth.txt',sep='\t')
 # write.table(counts.clean,'LTRC_raw.txt',sep='\t')
 
 
+data=read_delim("analyses/LTRC/LTRC_qs_com_exp.txt",delim = '\t',col_names = T)
+data<-data.frame(data)
+row.names(data)<-data$X0
+data$X0<-NULL
+data$X0_1<-NULL
 
 ff<-data.frame(RNApheno.modCopd$gender)
 ff$race<-RNApheno.modCopd$race
 ff$sex<-RNApheno.modCopd$gender
+
+ff$sex<-str_replace(ff$sex,'0', "F")
+ff$sex<-str_replace(ff$sex,'1', "M")
+
+
+
 ff$py<-round(as.numeric(RNApheno.modCopd$smoking_packyears))
 ff$copd<-RNApheno.modCopd$modCopd.control
+ff$copd<-str_replace(ff$copd,'1', "case")
+ff$copd<-str_replace(ff$copd,'0', "cont")
 ff$age<-round(as.numeric(RNApheno.modCopd$age))
 
-mmdata<-combat_edata1[,ff$sex=="1"]
+
+
+mmdata<-data[,ff$sex=="M"]
 # rownames(mmdata)<-gset@featureData@data$`Gene symbol`
-ffdata<-combat_edata1[,ff$sex=="0"]
+ffdata<-data[,ff$sex=="F"]
 # rownames(ffdata)<-gset@featureData@data$`Gene symbol`
 
 # table(ff$sex,ff$copd)
 
-mm<-ff[ff$sex=="1",]
-ff<-ff[ff$sex=="0",]
+mm<-ff[ff$sex=="M",]
+ff<-ff[ff$sex=="F",]
 
 designA <- model.matrix(~copd+age+py,ff)
 
@@ -159,20 +174,21 @@ fit <- lmFit(ffdata, designA)  # fit linear model
 fit2A <- eBayes(fit, 0.01)
 
 tT2<-topTable(fit2A, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
-tT2 <- subset(tT2, select=c('AveExpr','logFC',"P.Value",'adj.P.Val')) ##
+# tT2 <- subset(tT2, select=c('AveExpr','logFC',"P.Value",'adj.P.Val')) ##
 write.table(tT2, file=paste('analyses/F_LTRC_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
 
 designB <- model.matrix(~copd+age+py,mm)
 
-fit <- lmFit(mmdata, designB)  # fit linear model
+fit <- lmFit((mmdata), designB)  # fit linear model
 fitA <- eBayes(fit, 0.01)
 
 tT<-topTable(fitA, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
-tT <- subset(tT, select=c('AveExpr','logFC',"P.Value",'adj.P.Val')) ##
+# tT <- subset(tT, select=c('AveExpr','logFC',"P.Value",'adj.P.Val')) ##
 write.table(tT, file=paste('analyses/M_LTRC_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
 
-
+tT$gene<-row.names(tT)
+tT2$gene<-row.names(tT2)
 
 
