@@ -139,19 +139,19 @@ write.table(round(data1,3),'LTRC_qsmooth.txt',sep='\t')
 ff<-data.frame(RNApheno.modCopd$gender)
 ff$race<-RNApheno.modCopd$race
 ff$sex<-RNApheno.modCopd$gender
-ff$py<-RNApheno.modCopd$packyears
-ff$copd<-RNApheno.modCopd$COPD
+ff$py<-round(as.numeric(RNApheno.modCopd$smoking_packyears))
+ff$copd<-RNApheno.modCopd$modCopd.control
 ff$age<-round(as.numeric(RNApheno.modCopd$age))
 
-mmdata<-combat_edata3[,ff$sex=="M"]
-rownames(mmdata)<-gset@featureData@data$`Gene symbol`
-ffdata<-combat_edata3[,ff$sex=="F"]
-rownames(ffdata)<-gset@featureData@data$`Gene symbol`
+mmdata<-combat_edata1[,ff$sex=="1"]
+# rownames(mmdata)<-gset@featureData@data$`Gene symbol`
+ffdata<-combat_edata1[,ff$sex=="0"]
+# rownames(ffdata)<-gset@featureData@data$`Gene symbol`
 
 # table(ff$sex,ff$copd)
 
-mm<-ff[ff$sex=="M",]
-ff<-ff[ff$sex=="F",]
+mm<-ff[ff$sex=="1",]
+ff<-ff[ff$sex=="0",]
 
 designA <- model.matrix(~copd+age+py,ff)
 
@@ -159,8 +159,8 @@ fit <- lmFit(ffdata, designA)  # fit linear model
 fit2A <- eBayes(fit, 0.01)
 
 tT2<-topTable(fit2A, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
-tT2 <- subset(tT2, select=c("ID",'AveExpr','logFC',"P.Value",'adj.P.Val')) ##
-write.table(tT2, file=paste('analyses/F_LTCOPD_de_','061521','.txt',sep=''), row.names=T, sep="\t")
+tT2 <- subset(tT2, select=c('AveExpr','logFC',"P.Value",'adj.P.Val')) ##
+write.table(tT2, file=paste('analyses/F_LTRC_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
 
 designB <- model.matrix(~copd+age+py,mm)
@@ -169,8 +169,8 @@ fit <- lmFit(mmdata, designB)  # fit linear model
 fitA <- eBayes(fit, 0.01)
 
 tT<-topTable(fitA, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
-tT <- subset(tT, select=c("ID",'AveExpr','logFC',"P.Value",'adj.P.Val')) ##
-write.table(tT, file=paste('analyses/M_LTCOPD_de_','061521','.txt',sep=''), row.names=T, sep="\t")
+tT <- subset(tT, select=c('AveExpr','logFC',"P.Value",'adj.P.Val')) ##
+write.table(tT, file=paste('analyses/M_LTRC_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
 
 
