@@ -43,9 +43,9 @@ write.table(round(D3,3),'LTCOPD_qsmooth_combat.txt',sep='\t')
 ff<-data.frame(gset$`Sex:ch1`)
 ff$race<-gset$`race:ch1`
 ff$sex<-gset$`Sex:ch1`
-ff$py<-gset$`packyears:ch1`
-ff$copd<-gset$`copd:ch1`
-ff$age<-round(as.numeric(gset$`age:ch1`))
+ff$py<-as.numeric(round(as.numeric(gset$`packyears:ch1`)))
+ff$copd<-factor(gset$`copd:ch1`,levels=c('cont','case'))
+ff$age<-as.numeric(round(as.numeric(gset$`age:ch1`)))
 
 mmdata<-combat_edata3[,ff$sex=="M"]
 rownames(mmdata)<-gset@featureData@data$`Gene symbol`
@@ -57,12 +57,14 @@ rownames(ffdata)<-gset@featureData@data$`Gene symbol`
 mm<-ff[ff$sex=="M",]
 ff<-ff[ff$sex=="F",]
 
+
+
 designA <- model.matrix(~copd+age+py,ff)
 
 fit <- lmFit(ffdata, designA)  # fit linear model
 fit2A <- eBayes(fit, 0.01)
 
-tT2<-topTable(fit2A, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
+tT2<-topTable(fit2A, coef="conditioncase",adjust="fdr", sort.by="p", number=10000) ## plate batch variableas surrogate ??
 # tT2 <- subset(tT2, select=c("ID",'AveExpr','logFC',"P.Value",'adj.P.Val')) ##
 write.table(tT2, file=paste('analyses/F_LTCOPD_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
@@ -72,7 +74,7 @@ designB <- model.matrix(~copd+age+py,mm)
 fit <- lmFit(mmdata, designB)  # fit linear model
 fitA <- eBayes(fit, 0.01)
 
-tT<-topTable(fitA, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
+tT<-topTable(fitA, coef=2,adjust="fdr", sort.by="p", number=10000) ## plate batch variableas surrogate ??
 # tT <- subset(tT, select=c("ID",'AveExpr','logFC',"P.Value",'adj.P.Val')) ##
 write.table(tT, file=paste('analyses/M_LTCOPD_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
@@ -128,7 +130,7 @@ hist(combat_edata1)# jj<-(str_split(rownames(combat_edata1),'[.]'))
 # 
 # write.csv(counts.modCopd$counts,"~/analyses/LTRC/modCopd_060521.csv",sep=',', row.names = T)
 
-
+# combat_edata1=log2(combat_edata1+1)##  >> ## input to panda ## not voom
 
 write.table(round(combat_edata1,3),'LTRC_qsmooth_combat.txt',sep='\t')
 write.table(round(data1,3),'LTRC_qsmooth.txt',sep='\t')
@@ -143,6 +145,7 @@ data$X0_1<-NULL
 
 ff<-data.frame(RNApheno.modCopd$gender)
 ff$race<-RNApheno.modCopd$race
+ff$batch<-RNApheno.modCopd$batch 
 ff$sex<-RNApheno.modCopd$gender
 
 ff$sex<-str_replace(ff$sex,'0', "F")
@@ -158,9 +161,9 @@ ff$age<-round(as.numeric(RNApheno.modCopd$age))
 
 
 
-mmdata<-data[,ff$sex=="M"]
+mmdata<-counts.clean[,ff$sex=="M"]
 # rownames(mmdata)<-gset@featureData@data$`Gene symbol`
-ffdata<-data[,ff$sex=="F"]
+ffdata<-counts.clean[,ff$sex=="F"]
 # rownames(ffdata)<-gset@featureData@data$`Gene symbol`
 
 # table(ff$sex,ff$copd)
@@ -168,22 +171,24 @@ ffdata<-data[,ff$sex=="F"]
 mm<-ff[ff$sex=="M",]
 ff<-ff[ff$sex=="F",]
 
-designA <- model.matrix(~copd+age+py,ff)
-
-fit <- lmFit(ffdata, designA)  # fit linear model
+designA <- model.matrix(~copd+age+py+batch,ff)
+ 
+###VOOM here###
+fff<-voom(ffdata,designA)
+fit <- lmFit(fff, designA)  # fit linear model
 fit2A <- eBayes(fit, 0.01)
 
-tT2<-topTable(fit2A, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
+tT2<-topTable(fit2A, coef='copdcase',adjust="fdr", sort.by="p", number=10000) ## plate batch variableas surrogate ??
 # tT2 <- subset(tT2, select=c('AveExpr','logFC',"P.Value",'adj.P.Val')) ##
 write.table(tT2, file=paste('analyses/F_LTRC_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
 
 designB <- model.matrix(~copd+age+py,mm)
-
-fit <- lmFit((mmdata), designB)  # fit linear model
+mmm<-voom(mmdata,designA)
+fit <- lmFit(mmm, designB)  # fit linear model
 fitA <- eBayes(fit, 0.01)
 
-tT<-topTable(fitA, coef=2,adjust="fdr", sort.by="p", number=1000) ## plate batch variableas surrogate ??
+tT<-topTable(fitA, coef=2,adjust="fdr", sort.by="p", number=10000) ## plate batch variableas surrogate ??
 # tT <- subset(tT, select=c('AveExpr','logFC',"P.Value",'adj.P.Val')) ##
 write.table(tT, file=paste('analyses/M_LTRC_de_','061521','.txt',sep=''), row.names=T, sep="\t")
 
